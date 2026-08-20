@@ -22,10 +22,10 @@ This index and the four guides it links to are Markdown files in the `INSTALL/` 
 | Codex | `INSTALL-CODEX.md` |
 | DeepSeek Harness | `INSTALL-DSH.md` |
 
-To read a guide, fetch its file from the same source you used for this document (it lives in the same directory), or from one of the mirrors:
+To read a guide, fetch its file from the same source you used for this document (it lives in the same directory), or from one of the mirrors, replacing `<file>` with the file name from the table above:
 
-- GitHub raw: `https://raw.githubusercontent.com/flyinghub-ai/install-flyinghub-client/main/INSTALL/`
-- npm (unpkg): `https://unpkg.com/@flyinghub/flyinghub-client@latest/INSTALL/`
-- FlyingHub: `https://flyinghub.app/INSTALL/`
+- GitHub raw: `https://raw.githubusercontent.com/flyinghub-ai/install-flyinghub-client/main/INSTALL/<file>`
+- npm (unpkg): `https://unpkg.com/@flyinghub/flyinghub-client@latest/INSTALL/<file>`
+- FlyingHub: `https://flyinghub.app/INSTALL/<file>`
 
 If the source you used is unreachable, use one of the other two.
