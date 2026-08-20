@@ -4,7 +4,7 @@
 
 You are an IT engineer. Read this document carefully and guide the user through installing and configuring @flyinghub/flyinghub-client.
 
-If the AI agent is not a DeepSeek Harness, ignore this document.
+If the AI agent is not an OpenClaw Gateway, ignore this document.
 
 Always converse in the language the user is currently using, whether that is Chinese, English, or any other language.
 
@@ -20,24 +20,11 @@ Installation is split into 5 phases:
 
 The system requires **Node 18+**. If it is not already installed, install it yourself -- Node 24 works well.
 
-**pnpm** -- dsh manages profile plugins with pnpm; install it only if it is not already available on the system (e.g. `npm install -g pnpm`).
-
-## 0.5 dsh sandbox & permission escalation -- READ BEFORE INSTALLING
-
-This client is being installed by a DeepSeek Harness (dsh) agent. dsh runs a file-effect sandbox; under the default `workspace-write` policy, commands may write only under the session workspace and platform temp areas. The npm global prefix (`npm prefix -g`, e.g. `~/.local`), `~/.pm2`, `~/.config/systemd/user/`, the flyinghub XDG state dirs, and `$DSH_HOME/cordis.patch.yml` are all OUTSIDE that boundary, so the writes below are denied on the first attempt with a `[sandbox: file access denied under workspace-write mode]` marker. That is expected -- follow this protocol:
-
-1. Run the command normally. When the sandbox denies it, retry the SAME command once, in the same turn, with `sandbox_permissions: danger-full-access` (the narrowest mode that permits the required writes) and a one-sentence `justification`. The approval prompt raised by that retry IS the consent step -- the user approves it there. Do not stop to ask permission in chat.
-2. If the escalation is rejected or no approval is available, STOP and report the limitation to the user. Never work around the sandbox: do NOT install into the session workspace (no `--prefix <workspace>/...`, no local `node_modules`, no hand-downloaded tarball, no workspace-local XDG dirs). A workspace-local install leaves `flyinghub` off PATH and its state dirs in the wrong place -- it is broken, not "good enough".
-3. Apply the same one-shot escalation to every later outside-workspace write: `npm install -g pm2`, `pm2 start` / `pm2 save` (writes `~/.pm2`), systemd unit files under `~/.config/systemd/user/`, `flyinghub` first-run state under `~/.local/state`, and the `$DSH_HOME/cordis.patch.yml` edit in phase 4.
-4. Registry: if `registry.npmjs.org` is unreachable (connection timeouts), retry with the mirror `--registry https://registry.npmmirror.com`. Do not hand-download the tarball as a substitute for the install.
-
 ## 1. Install
 
 ```bash
 npm install -g @flyinghub/flyinghub-client
 ```
-
-(If the default registry is unreachable from this environment, retry with: `npm install -g @flyinghub/flyinghub-client --registry https://registry.npmmirror.com`.)
 
 After installation, a `flyinghub` command becomes available.
 
@@ -67,43 +54,28 @@ flyinghub config set mcp_host 127.0.0.1
 
 By default the MCP Server listens on `127.0.0.1:3100`. Change these values only if there is a port conflict.
 
-### 2.2. Add an AI agent (configure an adapter)
+### 2.2. Add openclaw-gateway as an adapter
 
-Basic usage:
+Before configuring, gather the following:
+
+- `<wsurl>`: the openclaw-gateway WebSocket endpoint, e.g. `ws://127.0.0.1:18789` -- an OpenClaw agent can read this from its own configuration
+- `auth-mode`: the authentication method, usually `token` or `password` (default: `token`) -- same, read from configuration
+- `token` or `password`: the actual credential, depending on `auth-mode`
+
+> **Requires user input:** the `token` (or `password`). If you can read it from the OpenClaw configuration, use it directly; otherwise ask the user for it -- never fabricate it. (It is usually under the `gateway.auth` section of `openclaw.json`.)
 
 ```bash
 flyinghub agent add <adp_name> \
-  --type dsh \
-  command=<dsh-cli-path>
+  --type openclaw-gateway \
+  url=<wsurl> \
+  auth-mode=<token|password> \
+  token=<your_gateway_token> \
+  password=<your_gateway_password>
 ```
 
-- `<adp_name>`: the adapter name, e.g. `flyinghub-dsh` or any short name you like
-- `command`: the dsh CLI executable path (required). Locate it using a command available on your platform -- e.g. `which dsh` on Linux/macOS, `where dsh` on Windows -- rather than assuming a fixed path. If none of those finds it (e.g. dsh is not on PATH), resolve the real path from a running dsh process: `readlink -f /proc/$(pgrep -n dsh)/exe` on Linux, `lsof -p $(pgrep -n dsh) | awk '$4=="txt"{print $NF; exit}'` on macOS, `(Get-Process dsh | Select-Object -First 1).Path` in Windows PowerShell.
+- `<adp_name>`: the adapter name, e.g. `openclaw` or any short name you like
 
-dsh requires an explicit provider and model; it defaults to `deepseek-official` / `deepseek-v4-flash`.
-When dsh uses a model not provided by deepseek, configure the provider and model:
-
-```bash
-flyinghub agent set flyinghub-dsh provider=<provider> model=<model>
-```
-
-The following are optional advanced options -- use them only when needed.
-
-Any environment variables can be injected into the dsh subprocess by appending `KEY=VALUE` pairs (provider credentials, e.g. API keys). Common DeepSeek ones:
-
-```bash
-flyinghub agent add flyinghub-dsh --type dsh \
-  command=<dsh-cli-path> \
-  DEEPSEEK_API_KEY=sk-xxx \
-  DEEPSEEK_BASE_URL=https://api.deepseek.com
-```
-
-To update or remove environment variables after the adapter is added:
-
-```bash
-flyinghub agent set flyinghub-dsh env.DEEPSEEK_API_KEY=sk-new
-flyinghub agent unset flyinghub-dsh env.DEEPSEEK_BASE_URL
-```
+These values must match your actual OpenClaw Gateway configuration.
 
 ## 3. Start & Process Management
 
@@ -181,19 +153,45 @@ pm2 restart flyinghub
 
 With flyinghub running, configure the MCP client on your AI agent so it can reach flyinghub's MCP Server.
 
-Add an `mcp-flyinghub` entry to the dsh global config `$DSH_HOME/cordis.patch.yml` (defaults to `.dsh/` under the user home dir when `DSH_HOME` is unset; applies to every profile):
+The openclaw gateway needs to know about the MCP server -- add this to your OpenClaw configuration. Choose one of the following two options.
 
-```yaml
-- insert:
-    - id: mcp-flyinghub
-      name: '@deepseek-ai/dsh-mcp-client'
-      config:
-        serverName: flyinghub
-        transport: streamable-http
-        url: http://127.0.0.1:3100/mcp
+**Streamable HTTP:**
+```json
+{
+  "mcp": {
+    "servers": {
+      "flyinghub-mcp": {
+        "url": "http://127.0.0.1:3100/mcp",
+        "transport": "streamable-http"
+      }
+    }
+  }
+}
 ```
 
-> Replace `127.0.0.1` and `3100` with your actual `mcp_host` / `mcp_port` configuration.
+**SSE:**
+```json
+{
+  "mcp": {
+    "servers": {
+      "flyinghub-mcp": {
+        "url": "http://127.0.0.1:3100/sse",
+        "transport": "sse"
+      }
+    }
+  }
+}
+```
+
+After updating the configuration, you may need to restart openclaw-gateway for the changes to take effect.
+
+Verify (optional):
+
+```
+openclaw mcp list
+```
+
+You should see `flyinghub-mcp` in the output.
 
 ## 5. Register a FlyingHub account
 
@@ -220,8 +218,7 @@ Once the user has activated the account, restart the flyinghub process:
 - **systemd**: `systemctl --user restart flyinghub`
 - **PM2**: `pm2 restart flyinghub`
 
-If the `flyinghub_activation_init_v2` tool is unavailable, the MCP Server is not connected:
-confirm the `mcp-flyinghub` entry is present in the dsh global config `$DSH_HOME/cordis.patch.yml`; then retry registration.
+If the `flyinghub_activation_init_v2` tool is unavailable, the MCP Server is not connected: usually restarting openclaw-gateway reloads the tools.
 
 ## Verification
 
@@ -233,12 +230,12 @@ The output may look like this:
 
 ``` text
 flyinghub[_default]
-  Running: yes (PID 1462065)
+  Running: yes (PID 412882)
   Connection: authenticated
   Adapters:
-    flyinghub-dsh (dsh) online
+    openclaw1 (openclaw-gateway) online
   Log level:  info
 ```
 * **Running** indicates whether the FlyingHub process is running.
 * **Connection: authenticated** indicates that FlyingHub has successfully authenticated with the FlyingHub service.
-* **Adapters: flyinghub-dsh (dsh) online** indicates that the adapter named `flyinghub-dsh` (configured when the adapter was added) is of type `dsh` and is currently online.
+* **Adapters: openclaw1 (openclaw-gateway) online** indicates that the adapter named `openclaw1` (configured when the adapter was added) is of type `openclaw-gateway` and is currently online.

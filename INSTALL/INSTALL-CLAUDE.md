@@ -4,6 +4,10 @@
 
 You are an IT engineer. Read this document carefully and guide the user through installing and configuring @flyinghub/flyinghub-client.
 
+If the AI agent is not Claude Code, ignore this document.
+
+Always converse in the language the user is currently using, whether that is Chinese, English, or any other language.
+
 Installation is split into 5 phases:
 
 1. **Install**
@@ -50,42 +54,7 @@ flyinghub config set mcp_host 127.0.0.1
 
 By default the MCP Server listens on `127.0.0.1:3100`. Change these values only if there is a port conflict.
 
-### 2.2. Add an AI agent (configure an adapter)
-
-Pick the section that matches your agent type:
-
-- **I am OpenClaw Gateway** -> [Option A: OpenClaw Gateway](#option-a)
-- **I am Claude Code** -> [Option B: Claude Code](#option-b)
-- **I am Codex** -> [Option C: Codex](#option-c)
-
----
-
-<a id="option-a"></a>
-#### Option A: add openclaw-gateway as an adapter
-
-Before configuring, gather the following:
-
-- `<wsurl>`: the openclaw-gateway WebSocket endpoint, e.g. `ws://127.0.0.1:18789` -- an OpenClaw agent can read this from its own configuration
-- `auth-mode`: the authentication method, usually `token` or `password` (default: `token`) -- same, read from configuration
-- `token` or `password`: the actual credential, depending on `auth-mode`
-
-> **Requires user input:** the `token` (or `password`). If you can read it from the OpenClaw configuration, use it directly; otherwise ask the user for it -- never fabricate it. (It is usually under the `gateway.auth` section of `openclaw.json`.)
-
-```bash
-flyinghub agent add <adp_name> \
-  --type openclaw-gateway \
-  url=<wsurl> \
-  auth-mode=<token|password> \
-  token=<your_gateway_token> \
-  password=<your_gateway_password>
-```
-
-- `<adp_name>`: the adapter name, e.g. `openclaw` or any short name you like
-
-These values must match your actual OpenClaw Gateway configuration.
-
-<a id="option-b"></a>
-#### Option B: add claude-code as an adapter
+### 2.2. Add claude-code as an adapter
 
 The following steps are required:
 
@@ -122,46 +91,6 @@ To update or remove environment variables after the adapter is added:
 ```bash
 flyinghub agent set my-claude env.ANTHROPIC_API_KEY=sk-ant-new
 flyinghub agent unset my-claude env.OPENAI_API_KEY
-```
-
-<a id="option-c"></a>
-#### Option C: add codex as an adapter
-
-The following steps are required:
-
-```bash
-flyinghub agent add <adp_name> \
-  --type codex \
-  command=codex
-```
-
-- `<adp_name>`: the adapter name, e.g. `my-codex` or any short name you like
-- `command`: the path to the Codex CLI binary (required). Locate it using a command available on your platform -- e.g. `which codex` on Linux/macOS, `where codex` on Windows -- rather than assuming a fixed path. If none of those finds it (e.g. codex is not on PATH), resolve the real path from a running codex process: `readlink -f /proc/$(pgrep -n codex)/exe` on Linux, `lsof -p $(pgrep -n codex) | awk '$4=="txt"{print $NF; exit}'` on macOS, `(Get-Process codex | Select-Object -First 1).Path` in Windows PowerShell.
-
-Optional advanced options can be passed as `key=value`:
-
-```bash
-flyinghub agent add my-codex --type codex \
-  command=codex \
-  model=gpt-5.2 \
-  sandbox=workspace-write \
-  approval_policy=never \
-  reply_timeout=1200
-```
-
-Any environment variables can be injected into the subprocess by appending `KEY=VALUE` pairs:
-
-```bash
-flyinghub agent add my-codex --type codex \
-  command=codex \
-  OPENAI_API_KEY=sk-xxx
-```
-
-To update or remove environment variables after the adapter is added:
-
-```bash
-flyinghub agent set my-codex env.OPENAI_API_KEY=sk-new
-flyinghub agent unset my-codex env.OPENAI_API_KEY
 ```
 
 ## 3. Start & Process Management
@@ -238,65 +167,9 @@ pm2 restart flyinghub
 
 ## 4. Configure the AI agent's MCP client
 
-With flyinghub running, configure the MCP client on your AI agent so it can reach flyinghub's MCP Server. Pick the section that matches your agent type:
+With flyinghub running, configure the MCP client on your AI agent so it can reach flyinghub's MCP Server.
 
-- **I am OpenClaw Gateway** -> [4.A OpenClaw](#mcp-openclaw)
-- **I am Claude Code** -> [4.B Claude Code](#mcp-claude)
-- **I am Codex** -> [4.C Codex](#mcp-codex)
-
----
-
-<a id="mcp-openclaw"></a>
-#### 4.A. OpenClaw
-
-If you are using Claude Code, skip this section and go to [4.B Claude Code](#mcp-claude). If you are using Codex, skip this section and go to [4.C Codex](#mcp-codex).
-
-The openclaw gateway needs to know about the MCP server -- add this to your OpenClaw configuration. Choose one of the following two options.
-
-**Streamable HTTP:**
-```json
-{
-  "mcp": {
-    "servers": {
-      "flyinghub-mcp": {
-        "url": "http://127.0.0.1:3100/mcp",
-        "transport": "streamable-http"
-      }
-    }
-  }
-}
-```
-
-**SSE:**
-```json
-{
-  "mcp": {
-    "servers": {
-      "flyinghub-mcp": {
-        "url": "http://127.0.0.1:3100/sse",
-        "transport": "sse"
-      }
-    }
-  }
-}
-```
-
-After updating the configuration, you may need to restart openclaw-gateway for the changes to take effect.
-
-Verify (optional):
-
-```
-openclaw mcp list
-```
-
-You should see `flyinghub-mcp` in the output.
-
-<a id="mcp-claude"></a>
-#### 4.B. Claude Code
-
-If you are using OpenClaw or Codex, skip this section.
-
-Also register the MCP server at the Claude level so Claude Code can reach it directly:
+Register the MCP server at the Claude level so Claude Code can reach it directly:
 
 **Streamable HTTP (recommended):**
 ```bash
@@ -309,21 +182,6 @@ claude mcp add --scope user --transport sse flyinghub-mcp-sse http://127.0.0.1:3
 ```
 
 > Replace `127.0.0.1` and `3100` with your actual `mcp_host` / `mcp_port` configuration. After updating the MCP configuration, restart claude code for the changes to take effect.
-
-<a id="mcp-codex"></a>
-#### 4.C. Codex
-
-If you are using OpenClaw or Claude Code, skip this section.
-
-Register the MCP server for codex:
-
-```bash
-codex mcp add flyinghub --url http://127.0.0.1:3100/mcp
-```
-
-Then edit codex's config file `$CODEX_HOME/config.toml` (defaults to `.codex/` under the user home dir when `CODEX_HOME` is unset; `codex doctor` shows the actual path) and add a line to the `[mcp_servers.flyinghub]` table: `default_tools_approval_mode = "approve"`
-
-Note: codex does not support SSE.
 
 ## 5. Register a FlyingHub account
 
@@ -350,23 +208,11 @@ Once the user has activated the account, restart the flyinghub process:
 - **systemd**: `systemctl --user restart flyinghub`
 - **PM2**: `pm2 restart flyinghub`
 
-If the `flyinghub_activation_init_v2` tool is unavailable, the MCP Server is not connected:
-- **openclaw**: usually restarting openclaw-gateway reloads the tools.
-- **claude code**: spawn a claude subprocess and register within it. For example:
+If the `flyinghub_activation_init_v2` tool is unavailable, the MCP Server is not connected: spawn a claude subprocess and register within it. For example:
 
 ```bash
 echo 'call flyinghub_activation_init_v2, params=...' | claude --print --permission-mode auto --allowedTools 'flyinghub_activation_init_v2' --mcp-config '{"mcpServers":{"flyinghub":{"type":"http","url":"http://127.0.0.1:3100/mcp"}}}'
 ```
-- **codex**: spawn a codex subprocess and register within it. For example:
-
-```bash
-codex exec --skip-git-repo-check -s workspace-write \
-  -c 'mcp_servers.flyinghub.url="http://127.0.0.1:3100/mcp"' \
-  -c 'mcp_servers.flyinghub.default_tools_approval_mode="approve"' \
-  'call flyinghub_activation_init_v2, params=...'
-```
-
-> If `flyinghub_activation_init_v2` is still unavailable but the flyinghub `resources` are visible: codex lazily loads MCP tools when the current model's metadata has `supports_search_tool: true`. Fix: edit `$CODEX_HOME/models.json` (defaults to `.codex/` under the user home dir when `CODEX_HOME` is unset; `codex doctor` shows the actual path), set `supports_search_tool` to `false` for the current model, then retry the command above.
 
 ## Verification
 
@@ -381,9 +227,9 @@ flyinghub[_default]
   Running: yes (PID 412882)
   Connection: authenticated
   Adapters:
-    openclaw1 (openclaw-gateway) online
+    my-claude (claude-code) online
   Log level:  info
 ```
 * **Running** indicates whether the FlyingHub process is running.
 * **Connection: authenticated** indicates that FlyingHub has successfully authenticated with the FlyingHub service.
-* **Adapters: openclaw1 (openclaw-gateway) online** indicates that the adapter named `openclaw1` (configured when the adapter was added) is of type `openclaw-gateway` and is currently online.
+* **Adapters: my-claude (claude-code) online** indicates that the adapter named `my-claude` (configured when the adapter was added) is of type `claude-code` and is currently online.

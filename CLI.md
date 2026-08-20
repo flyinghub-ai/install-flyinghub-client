@@ -32,7 +32,7 @@ Display help information.
 
 ### `start [options]`
 
-Start the daemon. Runs in the foreground -- use a process manager in production (see [README.md](./README.md#start--process-management)).
+Start the daemon. Runs in the foreground -- use a process manager in production (see [README.md](./README.md#3-start-the-daemon)).
 
 **Options:**
 
