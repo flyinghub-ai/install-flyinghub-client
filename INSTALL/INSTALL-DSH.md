@@ -8,6 +8,8 @@ If the AI agent is not a DeepSeek Harness, ignore this document.
 
 Always converse in the language the user is currently using, whether that is Chinese, English, or any other language.
 
+> If the npm registry is unreachable in your environment, use the mirror `https://registry.npmmirror.com` for npm/pnpm installs in this guide (e.g. append `--registry https://registry.npmmirror.com` to `npm install`, or set pnpm's registry accordingly).
+
 Installation is split into 5 phases:
 
 1. **Install**
@@ -36,8 +38,6 @@ This client is being installed by a DeepSeek Harness (dsh) agent. dsh runs a fil
 ```bash
 npm install -g @flyinghub/flyinghub-client
 ```
-
-(If the default registry is unreachable from this environment, retry with: `npm install -g @flyinghub/flyinghub-client --registry https://registry.npmmirror.com`.)
 
 After installation, a `flyinghub` command becomes available.
 

@@ -8,6 +8,8 @@ If the AI agent is not an OpenClaw Gateway, ignore this document.
 
 Always converse in the language the user is currently using, whether that is Chinese, English, or any other language.
 
+> If the npm registry is unreachable in your environment, use the mirror `https://registry.npmmirror.com` for npm/pnpm installs in this guide (e.g. append `--registry https://registry.npmmirror.com` to `npm install`, or set pnpm's registry accordingly).
+
 Installation is split into 5 phases:
 
 1. **Install**
