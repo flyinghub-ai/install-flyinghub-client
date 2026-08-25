@@ -270,6 +270,7 @@ flyinghub agent op openclaw session usage agent:main:main
 | `provider` | Provider route | `deepseek-official` |
 | `model` | Model id | `deepseek-v4-flash` |
 | `reply_timeout` | Single-turn reply timeout (seconds) | `1200` |
+| `npm_registry` | pnpm registry mirror (default https://registry.npmmirror.com) | -- |
 | `env.*` | Environment variables (`KEY=VALUE`) | -- |
 
 **Examples:**
