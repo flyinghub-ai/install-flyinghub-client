@@ -4,7 +4,7 @@
 
 You are an IT engineer. Read this document carefully and guide the user through installing and configuring @flyinghub/flyinghub-client.
 
-If the AI agent is not an OpenClaw Gateway, ignore this document.
+If the AI agent is not Hermes, ignore this document.
 
 Always converse in the language the user is currently using, whether that is Chinese, English, or any other language.
 
@@ -56,28 +56,52 @@ flyinghub config set mcp_host 127.0.0.1
 
 By default the MCP Server listens on `127.0.0.1:3100`. Change these values only if there is a port conflict.
 
-### 2.2. Add openclaw-gateway as an adapter
+### 2.2. Add hermes as an adapter
 
-Before configuring, gather the following:
+#### Check ACP support
 
-- `<wsurl>`: the openclaw-gateway WebSocket endpoint, e.g. `ws://127.0.0.1:18789` -- an OpenClaw agent can read this from its own configuration
-- `auth-mode`: the authentication method, usually `token` or `password` (default: `token`) -- same, read from configuration
-- `token` or `password`: the actual credential, depending on `auth-mode`
+Hermes usually ships with ACP support installed by default. Check whether it is available:
 
-> **Requires user input:** the `token` (or `password`). If you can read it from the OpenClaw configuration, use it directly; otherwise ask the user for it -- never fabricate it. (It is usually under the `gateway.auth` section of `openclaw.json`.)
+```bash
+hermes acp --version
+```
+
+- **No error** → ACP support is already installed; continue below.
+- **Error** (e.g. "acp" is not a recognized command) → your Hermes does not include the ACP extra (e.g. it was installed with a custom setup). Add it from the Hermes install directory (default `~/.hermes/hermes-agent`):
+
+**Linux/macOS:**
+```bash
+cd ~/.hermes/hermes-agent && uv pip install -e '.[acp]'
+```
+
+**Windows (PowerShell):**
+```powershell
+Set-Location "$env:LOCALAPPDATA\hermes\hermes-agent"
+uv pip install -e '.[acp]'
+```
+
+Then verify again with `hermes acp --check`.
+
+#### Add the adapter
+
+Basic usage:
 
 ```bash
 flyinghub agent add <adp_name> \
-  --type openclaw-gateway \
-  url=<wsurl> \
-  auth-mode=<token|password> \
-  token=<your_gateway_token> \
-  password=<your_gateway_password>
+  --type hermes \
+  command=<hermes-cli-path>
 ```
 
-- `<adp_name>`: the adapter name, e.g. `openclaw` or any short name you like
+- `<adp_name>`: the adapter name, e.g. `my-hermes` or any short name you like
+- `command` (required): the Hermes CLI executable path. Locate it using a command available on your platform -- e.g. `which hermes` on Linux/macOS, `where hermes` on Windows -- rather than assuming a fixed path. If none of those finds it (e.g. hermes is not on PATH), resolve the real path from a running hermes process: `readlink -f /proc/$(pgrep -n hermes)/exe` on Linux, `lsof -p $(pgrep -n hermes) | awk '$4=="txt"{print $NF; exit}'` on macOS, `(Get-Process hermes | Select-Object -First 1).Path` in Windows PowerShell.
 
-These values must match your actual OpenClaw Gateway configuration.
+The optional advanced usage below is only needed when required.
+
+```bash
+flyinghub agent add my-hermes --type hermes \
+  command=<hermes-cli-path> \
+  reply_timeout=1200
+```
 
 ## 3. Start & Process Management
 
@@ -155,45 +179,13 @@ pm2 restart flyinghub
 
 With flyinghub running, configure the MCP client on your AI agent so it can reach flyinghub's MCP Server.
 
-The openclaw gateway needs to know about the MCP server -- add this to your OpenClaw configuration. Choose one of the following two options.
+Register the MCP server for hermes:
 
-**Streamable HTTP:**
-```json
-{
-  "mcp": {
-    "servers": {
-      "flyinghub-mcp": {
-        "url": "http://127.0.0.1:3100/mcp",
-        "transport": "streamable-http"
-      }
-    }
-  }
-}
+```bash
+hermes mcp add flyinghub --url http://127.0.0.1:3100/mcp
 ```
 
-**SSE:**
-```json
-{
-  "mcp": {
-    "servers": {
-      "flyinghub-mcp": {
-        "url": "http://127.0.0.1:3100/sse",
-        "transport": "sse"
-      }
-    }
-  }
-}
-```
-
-After updating the configuration, you may need to restart openclaw-gateway for the changes to take effect.
-
-Verify (optional):
-
-```
-openclaw mcp list
-```
-
-You should see `flyinghub-mcp` in the output.
+> Replace `127.0.0.1` and `3100` with your actual `mcp_host` / `mcp_port` configuration.
 
 ## 5. Register a FlyingHub account
 
@@ -220,7 +212,15 @@ Once the user has activated the account, restart the flyinghub process:
 - **systemd**: `systemctl --user restart flyinghub`
 - **PM2**: `pm2 restart flyinghub`
 
-If the `flyinghub_activation_init_v2` tool is unavailable, the MCP Server is not connected: usually restarting openclaw-gateway reloads the tools.
+If the `flyinghub_activation_init_v2` tool is unavailable, the MCP Server is not connected: confirm the entry exists with `hermes mcp list` (it should list a `flyinghub` server), then verify `flyinghub status` shows the MCP Server running.
+
+## Security notes
+
+Hermes has no file-effect sandbox; its safety model is approvals:
+
+- **Dangerous commands** (e.g. `rm -rf`, `git push --force`) trigger an approval request. flyinghub answers these with a default **deny**, so such commands are blocked unless Hermes' own `approvals.mode: smart` auto-approves a low-risk one.
+- **File edits** inside the Hermes workspace are **auto-approved** (via ACP session mode `accept_edits`); sensitive paths (`~/.ssh`, `.env`) still require approval.
+- If an approval prompt appears during installation/configuration, present it to the user for a decision.
 
 ## Verification
 
@@ -235,9 +235,9 @@ flyinghub[_default]
   Running: yes (PID 412882)
   Connection: authenticated
   Adapters:
-    openclaw1 (openclaw-gateway) online
+    my-hermes (hermes) online
   Log level:  info
 ```
 * **Running** indicates whether the FlyingHub process is running.
 * **Connection: authenticated** indicates that FlyingHub has successfully authenticated with the FlyingHub service.
-* **Adapters: openclaw1 (openclaw-gateway) online** indicates that the adapter named `openclaw1` (configured when the adapter was added) is of type `openclaw-gateway` and is currently online.
+* **Adapters: my-hermes (hermes) online** indicates that the adapter named `my-hermes` (configured when the adapter was added) is of type `hermes` and is currently online.

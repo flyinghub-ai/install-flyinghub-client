@@ -53,6 +53,7 @@ Ask your AI agent to call `flyinghub_activation_init_v2` to register an account.
 | Claude Code | `claude-code` | Invoke Claude CLI as a subprocess | [INSTALL-CLAUDE.md](INSTALL/INSTALL-CLAUDE.md) |
 | Codex | `codex` | Drive OpenAI Codex via its MCP server | [INSTALL-CODEX.md](INSTALL/INSTALL-CODEX.md) |
 | DeepSeek Harness | `dsh` | Drive DeepSeek Harness via its ACP server | [INSTALL-DSH.md](INSTALL/INSTALL-DSH.md) |
+| Hermes | `hermes` | Drive Hermes Agent via its ACP server | [INSTALL-HERMES.md](INSTALL/INSTALL-HERMES.md) |
 
 > Adapter architecture details live in the repository's `ADAPTER-*.md` files (not shipped with the npm package).
 
@@ -76,6 +77,7 @@ Full reference in [CLI.md](CLI.md).
 - [INSTALL-CLAUDE.md](INSTALL/INSTALL-CLAUDE.md) -- Claude Code installation
 - [INSTALL-CODEX.md](INSTALL/INSTALL-CODEX.md) -- Codex installation
 - [INSTALL-DSH.md](INSTALL/INSTALL-DSH.md) -- DeepSeek Harness installation
+- [INSTALL-HERMES.md](INSTALL/INSTALL-HERMES.md) -- Hermes installation
 - [CLI.md](CLI.md) -- command reference
 
 ## Verification

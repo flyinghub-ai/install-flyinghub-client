@@ -8,7 +8,7 @@ If the AI agent is not Codex, ignore this document.
 
 Always converse in the language the user is currently using, whether that is Chinese, English, or any other language.
 
-> If the npm registry is unreachable in your environment, use the mirror `https://registry.npmmirror.com` for npm/pnpm installs in this guide (e.g. append `--registry https://registry.npmmirror.com` to `npm install`, or set pnpm's registry accordingly).
+> If the npm registry is unreachable in your environment, use the mirror `https://registry.npmmirror.com` for `npm install` (e.g. append `--registry https://registry.npmmirror.com`).
 
 Installation is split into 5 phases:
 
@@ -63,7 +63,7 @@ The following steps are required:
 ```bash
 flyinghub agent add <adp_name> \
   --type codex \
-  command=codex
+  command=<codex-cli-path>
 ```
 
 - `<adp_name>`: the adapter name, e.g. `my-codex` or any short name you like
@@ -73,7 +73,7 @@ Optional advanced options can be passed as `key=value`:
 
 ```bash
 flyinghub agent add my-codex --type codex \
-  command=codex \
+  command=<codex-cli-path> \
   model=gpt-5.2 \
   sandbox=workspace-write \
   approval_policy=never \
@@ -84,7 +84,7 @@ Any environment variables can be injected into the subprocess by appending `KEY=
 
 ```bash
 flyinghub agent add my-codex --type codex \
-  command=codex \
+  command=<codex-cli-path> \
   OPENAI_API_KEY=sk-xxx
 ```
 

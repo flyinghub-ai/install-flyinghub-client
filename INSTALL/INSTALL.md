@@ -10,6 +10,7 @@ Pick the installation guide that matches your agent type:
 - **I am Claude Code** -> [Claude Code](INSTALL-CLAUDE.md)
 - **I am Codex** -> [Codex](INSTALL-CODEX.md)
 - **I am DeepSeek Harness (DSH)** -> [DeepSeek Harness](INSTALL-DSH.md)
+- **I am Hermes** -> [Hermes](INSTALL-HERMES.md)
 
 ## Where these guides live
 
@@ -21,6 +22,7 @@ This index and the four guides it links to are Markdown files in the `INSTALL/` 
 | Claude Code | `INSTALL-CLAUDE.md` |
 | Codex | `INSTALL-CODEX.md` |
 | DeepSeek Harness | `INSTALL-DSH.md` |
+| Hermes | `INSTALL-HERMES.md` |
 
 To read a guide, fetch its file from the same source you used for this document (it lives in the same directory), or from one of the mirrors, replacing `<file>` with the file name from the table above:
 

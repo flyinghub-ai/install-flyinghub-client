@@ -8,7 +8,7 @@ If the AI agent is not Claude Code, ignore this document.
 
 Always converse in the language the user is currently using, whether that is Chinese, English, or any other language.
 
-> If the npm registry is unreachable in your environment, use the mirror `https://registry.npmmirror.com` for npm/pnpm installs in this guide (e.g. append `--registry https://registry.npmmirror.com` to `npm install`, or set pnpm's registry accordingly).
+> If the npm registry is unreachable in your environment, use the mirror `https://registry.npmmirror.com` for `npm install` (e.g. append `--registry https://registry.npmmirror.com`).
 
 Installation is split into 5 phases:
 
@@ -63,7 +63,7 @@ The following steps are required:
 ```bash
 flyinghub agent add <adp_name> \
   --type claude-code \
-  command=/usr/local/bin/claude
+  command=<claude-cli-path>
 ```
 
 - `<adp_name>`: the adapter name, e.g. `my-claude` or any short name you like
@@ -75,7 +75,7 @@ Optional startup arguments can be passed via `args`, e.g.:
 
 ```bash
 flyinghub agent add my-claude --type claude-code \
-  command=/usr/local/bin/claude \
+  command=<claude-cli-path> \
   args="--model claude-sonnet-5 --verbose"
 ```
 
@@ -83,7 +83,7 @@ Any environment variables can be injected into the Claude subprocess by appendin
 
 ```bash
 flyinghub agent add my-claude --type claude-code \
-  command=/usr/local/bin/claude \
+  command=<claude-cli-path> \
   ANTHROPIC_API_KEY=sk-ant-xxx \
   OPENAI_API_KEY=sk-xxx
 ```
