@@ -66,7 +66,7 @@ Hermes usually ships with ACP support installed by default. Check whether it is 
 hermes acp --version
 ```
 
-- **No error** → ACP support is already installed; continue below.
+- **No error** → ACP support is already installed; proceed to [Add the adapter](#add-the-adapter).
 - **Error** (e.g. "acp" is not a recognized command) → your Hermes does not include the ACP extra (e.g. it was installed with a custom setup). Add it from the Hermes install directory (default `~/.hermes/hermes-agent`):
 
 **Linux/macOS:**
