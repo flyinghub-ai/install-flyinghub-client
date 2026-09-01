@@ -186,6 +186,8 @@ hermes config set mcp_servers.flyinghub.url http://127.0.0.1:3100/mcp
 hermes config set mcp_servers.flyinghub.enabled true
 ```
 
+> Replace `127.0.0.1` and `3100` with your actual `mcp_host` / `mcp_port` configuration.
+
 Verify it:
 
 ```bash
@@ -209,8 +211,6 @@ Normally, the output should look like:
     flyinghub_create_hub        This tool is used to create a `hub` (similar to a Space...
     flyinghub_publish_hub       Make an existing FlyingHub `hub` public to attract inte...
 ```
-
-> Replace `127.0.0.1` and `3100` with your actual `mcp_host` / `mcp_port` configuration.
 
 ## 5. Register a FlyingHub account
 
